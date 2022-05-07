@@ -34,7 +34,7 @@ module.exports = function(app, passport) {
     app.get('/category',async (req,res)=>{
 
         var token = req.headers['postman-token']
-        var url = `https://newsapi.org/v2/everything?domains=techcrunch.com&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+        var url = `https://newsapi.org/v2/everything?domains=techcrunch.com&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
         const news_get =await axios.get(url)
 
         if(req.user && token) {
@@ -60,7 +60,7 @@ module.exports = function(app, passport) {
     })
 
     app.get('/category/sports',async(req,res)=>{
-        var url = `http://newsapi.org/v2/everything?q=sports&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+        var url = `http://newsapi.org/v2/everything?q=sports&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
         const news_get =await axios.get(url);
 
         var token = req.headers['postman-token']
@@ -83,7 +83,7 @@ module.exports = function(app, passport) {
     });
     app.get('/category/technology',async(req,res)=>{
 
-        var url = `https://newsapi.org/v2/everything?domains=techcrunch.com&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+        var url = `https://newsapi.org/v2/everything?domains=techcrunch.com&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
         const news_get =await axios.get(url)
 
         var token = req.headers['postman-token']
@@ -106,7 +106,7 @@ module.exports = function(app, passport) {
     });
     app.get('/category/entertainment',async(req,res)=>{
 
-        var url = `http://newsapi.org/v2/everything?q=entertainment&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+        var url = `http://newsapi.org/v2/everything?q=entertainment&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
         const news_get =await axios.get(url)
 
         var token = req.headers['postman-token']
@@ -128,7 +128,7 @@ module.exports = function(app, passport) {
     });
     app.get('/category/business',async(req,res)=>{
 
-        var url = `http://newsapi.org/v2/everything?q=business&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+        var url = `http://newsapi.org/v2/everything?q=business&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
         const news_get =await axios.get(url)
         var token = req.headers['postman-token']
         if(token){
@@ -150,7 +150,7 @@ module.exports = function(app, passport) {
         }}
     });
     app.get('/category/science',async(req,res)=>{
-        var url = 'http://newsapi.org/v2/everything?q=science&apiKey=c311a717afc94a8a8ee4c60a86822b08';
+        var url = 'http://newsapi.org/v2/everything?q=science&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08';
         const news_get =await axios.get(url)
 
         var token = req.headers['postman-token']
@@ -172,15 +172,58 @@ module.exports = function(app, passport) {
     
         }}
     });
+    const zip = (a, b) => a.reduce((c, x, i) => c.concat(x, b[i]), []);
 
+    const searchORFunction = (search) =>{
+        
+        var array = [];
+        array.push([search.indexOf(" or "),search.indexOf(" or ")+4]);
+        array.push([search.indexOf(" OR "),search.indexOf(" OR ")+4]);
+        array.push([search.indexOf(" oR "),search.indexOf(" oR ")+4]);
+        array.push([search.indexOf(" Or "),search.indexOf(" Or ")+4]);
+        
+        for(var i=0;i<array.length;i++){
+            
+            if(array[i][0]>=1){
+                var firstWordRange = [0,array[i][0]];
+                var secondWordRange = [array[i][1],search.length]
+            } 
+        }
 
-    app.post('/search',async(req,res)=>{
-        const search=req.body.search
+        var results = [search.substring(firstWordRange[0],firstWordRange[1]),search.substring(secondWordRange[0],secondWordRange[1])];
+        // console.log(results);
+        return results;
         
 
-        var url = `http://newsapi.org/v2/everything?q=${search}&apiKey=c311a717afc94a8a8ee4c60a86822b08`
+    }
+    app.post('/search',async(req,res)=>{
+        const search=req.body.search
+
+        if(search.indexOf(" or ")===-1){
+            if(search.indexOf(" OR ")!==-1) {
+                console.log(searchORFunction(search)[1]);
+                
+            } else if(search.indexOf(" Or ")!==-1){
+                console.log(searchORFunction(search)[1]);
+                
+            } else if(search.indexOf(" oR ")!==-1){
+                console.log(searchORFunction(search)[1]);
     
-        const news_get =await axios.get(url)
+            }
+            else{
+                console.log(searchORFunction(search)[1]);
+            }
+        }
+        else{
+            console.log(searchORFunction(search)[1]);
+            
+        }
+
+        var url = `http://newsapi.org/v2/everything?q=${searchORFunction(search)[0]}+AND+${searchORFunction(search)[1]}&sortBy=publishedAtey=c311a717afc94a8a8ee4c60a86822b08`
+
+        const news_get =await axios.get(url);
+
+
 
         var token = req.headers['postman-token']
         if(token){
@@ -188,8 +231,8 @@ module.exports = function(app, passport) {
         } else{
     
         try {
-            
-            res.render('myDashboard',{username:req.user,articles:news_get.data.articles})
+            console.log(news_get.data.articles)
+            res.render('myDashboard',{username:req.user,articles:news_get.data.articles,subjects:[]})
             
     
         } catch (error) {
@@ -206,7 +249,7 @@ module.exports = function(app, passport) {
 
 
         try {
-            var url = 'https://newsapi.org/v2/top-headlines?sources=techcrunch&apiKey=c311a717afc94a8a8ee4c60a86822b08';
+            var url = 'https://newsapi.org/v2/top-headlines?sources=techcrunch&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08';
     
             const news_get =await axios.get(url)
             // console.log(news_get.data.articles)
@@ -222,6 +265,10 @@ module.exports = function(app, passport) {
     
         }
     });
+
+    
+
+
     app.get('/news/user', isLoggedIn, async (req, res) => {
         var newsArray = [];
         var username = req.user;
@@ -233,6 +280,7 @@ module.exports = function(app, passport) {
         var science = false;
         var entertainment = false;
         var subjects=[];
+        var url1 = '';
 
 
         // var username ="erica";
@@ -247,7 +295,10 @@ module.exports = function(app, passport) {
             } else{
                 console.log("theres nothing here")
             }
-            console.log("The subjects for the dashboard are "+ subjects)
+            console.log("The subjects for the dashboard are "+ subjects);
+            console.log(subjects.length);
+
+
             if(subjects.includes("sports")) {
                 sports=true;
             }
@@ -270,12 +321,50 @@ module.exports = function(app, passport) {
         })
 
         try {
-            var url = 'https://newsapi.org/v2/top-headlines?sources=techcrunch&apiKey=c311a717afc94a8a8ee4c60a86822b08';
+            var url = 'https://newsapi.org/v2/top-headlines?sources=techcrunch&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08';
     
             const news_get =await axios.get(url)
+
             // console.log(news_get.data.articles)
+            console.log(subjects)
+            if(subjects.length==1){
+                console.log("the subject length is 1")
+                url1 = `http://newsapi.org/v2/everything?q=${subjects[0]}&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+                console.log(url1);
+            }
+            if(subjects.length==2){
+                console.log("the subject length is 2")
+                url1 = `http://newsapi.org/v2/everything?q=${subjects[0]}+AND+${subjects[1]}&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+                console.log(url1);
+
+            }
+            if(subjects.length==3){
+                console.log("the subject length is 3");
+                url1 = `http://newsapi.org/v2/everything?q=${subjects[0]}+AND+${subjects[1]}+AND+${subjects[2]}&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+                console.log(url1);
+
+            }
+            if(subjects.length==4){
+                console.log("the subject length is 4")
+                url1 = `http://newsapi.org/v2/everything?q=${subjects[0]}+AND+${subjects[1]}+AND+${subjects[2]}+AND+${subjects[3]}&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+                console.log(url1);
+
+            }
+            if(subjects.length==5){
+                console.log("the subject length is 5")
+                url1 = `http://newsapi.org/v2/everything?q=${subjects[0]}+AND+${subjects[1]}+AND+${subjects[2]}+AND+${subjects[3]}+AND+${subjects[4]}&sortBy=publishedAt&apiKey=c311a717afc94a8a8ee4c60a86822b08`;
+                console.log(url1);
+
+
+            }
+
+
+
+            const news_get2 =await axios.get(url1)
+            console.log(news_get2.data.articles)
+
             res.render('myDashboard'
-            ,{username:req.user,articles:news_get.data.articles,subjects:subjects}
+            ,{username:req.user,articles:news_get2.data.articles,subjects:subjects}
             )
     
         } catch (error) {
@@ -431,7 +520,7 @@ module.exports = function(app, passport) {
 
     }
 
-    app.get('/mySettings',function(req,res){
+    app.get('/mySettings',isLoggedIn,function(req,res){
         var username=req.user;
         var sports = false;
         var technology = false;
@@ -544,9 +633,18 @@ module.exports = function(app, passport) {
             console.log(results)         
         }) 
     }
+
+    //if the request has no settings
+    if(!request.body.sports&&!request.body.science&&!request.body.technology&&!request.body.entertainment&&!request.body.business){
+        response.render("settings",{username:request.user,message:"You have to select at least one...",sports:sports,technology:technology,entertainment:entertainment,science:science,business:business})
+
+    } else{
+        response.redirect('/news/user');
+    }
     
 
-    response.render("settings",{username:request.user,message:"Settings were updated.",sports:sports,technology:technology,entertainment:entertainment,science:science,business:business})
+    // response.render("settings",{username:request.user,message:"Settings were updated.",sports:sports,technology:technology,entertainment:entertainment,science:science,business:business})
+    
 
 })
 
